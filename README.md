@@ -1,36 +1,42 @@
-# Iris API su Kubernetes
+# Iris API on Kubernetes
 
-Piccolo progetto MLOps: un classificatore (Random Forest su dataset Iris) esposto come API REST con FastAPI, containerizzato con Docker e deployato su Kubernetes (Minikube) con 3 repliche.
+A small MLOps project: a classifier (Random Forest on the Iris dataset) exposed as a REST API with FastAPI, containerized with Docker, and deployed on Kubernetes (Minikube) with 3 replicas.
 
-## Architettura
+## Architecture
 
-Client -> Service (NodePort) -> 3 Pod `iris-api` -> modello scikit-learn
+Client -> Service (NodePort) -> 3 `iris-api` Pods -> scikit-learn model
 
-- Il modello viene addestrato durante il build dell'immagine.
-- `readinessProbe` su `/health`: il traffico arriva solo ai pod pronti.
-- Il campo `servito_da` nella risposta mostra il pod che ha risposto, così si vede il bilanciamento.
+- The model is trained during the image build.
+- A `readinessProbe` on `/health` ensures that traffic only reaches pods that are ready.
+- The `servito_da` field in the response shows which pod handled the request, making load balancing visible.
 
-## Avvio
+## Getting started
 
-    minikube start
-    docker build -t iris-api:1.0 .
-    minikube image load iris-api:1.0
-    kubectl apply -f k8s.yaml
-    minikube service iris-api --url
+```bash
+minikube start
+docker build -t iris-api:1.0 .
+minikube image load iris-api:1.0
+kubectl apply -f k8s.yaml
+minikube service iris-api --url
+```
 
-## Test
+## Testing
 
-    curl -X POST http://127.0.0.1:PORTA/predict \
-      -H "Content-Type: application/json" \
-      -d '{"sepal_length":6.7,"sepal_width":3.0,"petal_length":5.2,"petal_width":2.3}'
+Replace `PORT` with the port returned by `minikube service`:
 
-Risposta: `{"specie":"virginica","servito_da":"iris-api-..."}`
+```bash
+curl -X POST http://127.0.0.1:PORT/predict \
+  -H "Content-Type: application/json" \
+  -d '{"sepal_length":6.7,"sepal_width":3.0,"petal_length":5.2,"petal_width":2.3}'
+```
 
-## Cosa dimostra
+Response: `{"specie":"virginica","servito_da":"iris-api-..."}`
 
-- Deployment con 3 repliche e self-healing (cancellando un pod ne nasce un altro)
-- Service che bilancia il traffico tra i pod
-- Container immutabile: il modello è dentro l'immagine
+## What it demonstrates
+
+- Deployment with 3 replicas and self-healing (delete a pod and a new one replaces it)
+- Service load balancing traffic across pods
+- Immutable container: the model is baked into the image
 
 ## Stack
 
